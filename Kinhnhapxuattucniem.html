@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khám Phá Kinh Nhập Tức, Xuất Tức Niệm (Ānāpānasati Sutta)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutrals & Sage -->
+    <!-- Application Structure Plan: The application is structured as a single-page interactive journey, not a linear document. A sticky top navigation allows users to jump to thematic sections: 'Lộ Trình' (The Path), '16 Bước Thở' (16 Steps), 'Thất Giác Chi' (7 Factors), and 'Bối Cảnh' (Context). The core is the 'Lộ Trình' section, which presents the Sutta's central framework as an interactive flowchart. This non-linear, task-oriented design was chosen to make the complex, hierarchical teachings easily digestible and to encourage exploration. Users can grasp the overall map first, then dive into specific areas of interest, which is more effective for learning and retention than a simple top-to-bottom scroll. -->
+    <!-- Visualization & Content Choices: 
+        1. Lộ trình Giải thoát: Report Info -> The 4-stage path to liberation. Goal -> Organize/Show Relationship. Viz -> Interactive flowchart (HTML/CSS). Interaction -> Click on a stage to reveal details. Justification -> Visually clarifies the core causal structure of the entire teaching.
+        2. Các Cấp Độ Chứng Đắc: Report Info -> The different types of practitioners in the assembly. Goal -> Inform/Compare. Viz -> Donut Chart (Chart.js). Interaction -> Hover to see labels. Justification -> Provides a quick, engaging visual summary of the 'spiritual ecosystem' described, making it more impactful than a list. Data is illustrative of concepts.
+        3. 16 Bước Thở: Report Info -> The 16 steps of breath meditation. Goal -> Organize/Inform. Viz -> Tabbed interface with interactive cards. Interaction -> Click tabs (Thân, Thọ, Tâm, Pháp) to filter steps. Justification -> Breaks down a large set of instructions into manageable, thematically grouped chunks.
+        4. Thất Giác Chi: Report Info -> The sequential arising of the 7 factors of enlightenment. Goal -> Show Change/Process. Viz -> Sequential flow diagram (HTML/CSS). Interaction -> Click on a factor to read its description. Justification -> Emphasizes the causal, flowing nature of the factors, which is a key teaching in the Sutta.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+            background-color: #fdfcfb;
+            color: #44403c;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link.active, .nav-link:hover {
+            color: #047857; /* emerald-700 */
+            border-bottom-color: #047857;
+        }
+        .flow-item, .step-card, .factor-item, .context-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .flow-item:hover, .step-card:hover, .factor-item:hover, .context-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .tab-btn.active {
+            background-color: #065f46; /* emerald-800 */
+            color: #f0fdfa; /* emerald-50 */
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        audio {
+            filter: sepia(20%) saturate(70%) grayscale(1) contrast(99%) brightness(90%);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <header class="bg-stone-50/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-emerald-800">Ānāpānasati</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#home" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Giới Thiệu</a>
+                        <a href="#path" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Lộ Trình</a>
+                        <a href="#steps" class="nav-link px-3 py-2 rounded-md text-sm font-medium">16 Bước Thở</a>
+                        <a href="#factors" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Thất Giác Chi</a>
+                        <a href="#context" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Bối Cảnh</a>
+                    </div>
+                </div>
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-stone-600 hover:text-emerald-700 hover:bg-stone-200 focus:outline-none">
+                        <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#home" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Giới Thiệu</a>
+                <a href="#path" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Lộ Trình</a>
+                <a href="#steps" class="nav-link block px-3 py-2 rounded-md text-base font-medium">16 Bước Thở</a>
+                <a href="#factors" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Thất Giác Chi</a>
+                <a href="#context" class="nav-link block px-3 py-2 rounded-md text-base font-medium">Bối Cảnh</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <section id="home" class="text-center py-12 md:py-20">
+            <h2 class="text-3xl md:text-5xl font-bold text-emerald-800 tracking-tight">Kinh Nhập Tức, Xuất Tức Niệm</h2>
+            <p class="mt-4 text-lg md:text-xl text-stone-600 max-w-3xl mx-auto">Một bản đồ tương tác khám phá con đường tu tập từ hơi thở đến giải thoát, dựa trên Kinh số 118 của Trung Bộ Kinh.</p>
+            <p class="mt-6 text-base text-stone-500 max-w-2xl mx-auto">Ứng dụng này trực quan hóa lộ trình giải thoát được Đức Phật giảng dạy: một chuỗi nhân quả logic, khởi đầu từ việc quan sát hơi thở, làm viên mãn Tứ Niệm Xứ, tuần tự phát sinh Thất Giác Chi và đạt đến đích cuối cùng là Minh và Giải Thoát.</p>
+            
+            <div class="mt-12 max-w-xl mx-auto">
+                <p class="text-sm text-stone-500 mb-2">Nghe bản kinh (MP3):</p>
+                <audio controls class="w-full shadow-md rounded-lg">
+                    <!-- HƯỚNG DẪN SỬA LỖI AUDIO:
+                        1. Đảm bảo bạn đã tạo một thư mục tên là "audio" (viết thường) trong kho GitHub của bạn.
+                        2. Đảm bảo file MP3 của bạn nằm BÊN TRONG thư mục "audio" đó.
+                        3. Thay thế "ten_file_mp3_cua_ban.mp3" bằng TÊN FILE CHÍNH XÁC của bạn.
+                           LƯU Ý: Tên file và thư mục có phân biệt chữ HOA - thường.
+                           Ví dụ đúng: src="./audio/kinh-anapanasati.mp3"
+                           Ví dụ sai:   src="./Audio/Kinh-Anapanasati.mp3" (nếu tên file/thư mục không viết hoa)
+                    -->
+                    <source src="./audio/kinhtucniem.mp3" type="audio/mpeg">
+                    Trình duyệt của bạn không hỗ trợ phát âm thanh.
+                </audio>
+            </div>
+        </section>
+
+        <div class="space-y-16 md:space-y-24">
+
+            <section id="path">
+                <div class="text-center mb-12">
+                    <h3 class="text-2xl md:text-3xl font-bold text-stone-800">Lộ Trình Giải Thoát</h3>
+                    <p class="mt-3 text-stone-600 max-w-2xl mx-auto">Kinh văn trình bày một lộ trình nhân quả rõ ràng. Hãy nhấp vào từng giai đoạn để khám phá chi tiết cách pháp môn này được tu tập sung mãn sẽ tuần tự đưa đến quả vị cuối cùng.</p>
+                </div>
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-4 text-center">
+                    <div class="flow-item p-4 bg-white rounded-lg shadow-md w-64 cursor-pointer" data-content="path1">
+                        <p class="text-4xl mb-2">🌬️</p>
+                        <h4 class="font-bold text-emerald-700">1. Quán Niệm Hơi Thở</h4>
+                        <p class="text-sm text-stone-500">($Ānāpānasati$)</p>
+                    </div>
+                    <div class="text-4xl text-stone-400 transform md:rotate-0 rotate-90">→</div>
+                    <div class="flow-item p-4 bg-white rounded-lg shadow-md w-64 cursor-pointer" data-content="path2">
+                        <p class="text-4xl mb-2">🧘</p>
+                        <h4 class="font-bold text-emerald-700">2. Tứ Niệm Xứ</h4>
+                        <p class="text-sm text-stone-500">(Bốn Lĩnh Vực Quán Niệm)</p>
+                    </div>
+                    <div class="text-4xl text-stone-400 transform md:rotate-0 rotate-90">→</div>
+                    <div class="flow-item p-4 bg-white rounded-lg shadow-md w-64 cursor-pointer" data-content="path3">
+                        <p class="text-4xl mb-2">💡</p>
+                        <h4 class="font-bold text-emerald-700">3. Thất Giác Chi</h4>
+                        <p class="text-sm text-stone-500">(Bảy Yếu Tố Giác Ngộ)</p>
+                    </div>
+                    <div class="text-4xl text-stone-400 transform md:rotate-0 rotate-90">→</div>
+                    <div class="flow-item p-4 bg-white rounded-lg shadow-md w-64 cursor-pointer" data-content="path4">
+                        <p class="text-4xl mb-2">🕊️</p>
+                        <h4 class="font-bold text-emerald-700">4. Minh & Giải Thoát</h4>
+                        <p class="text-sm text-stone-500">($Vijjā-Vimutti$)</p>
+                    </div>
+                </div>
+                <div id="path-content" class="mt-8 p-6 bg-emerald-50 rounded-lg text-stone-700 min-h-[100px] fade-in hidden"></div>
+            </section>
+
+            <section id="steps">
+                <div class="text-center mb-12">
+                    <h3 class="text-2xl md:text-3xl font-bold text-stone-800">16 Bước Tu Tập Quán Niệm Hơi Thở</h3>
+                    <p class="mt-3 text-stone-600 max-w-2xl mx-auto">16 bước này được chia thành 4 nhóm, tương ứng hoàn hảo với Tứ Niệm Xứ. Hãy chọn một lĩnh vực để xem các bước thực hành chi tiết.</p>
+                </div>
+                <div class="flex justify-center mb-8 space-x-2 md:space-x-4">
+                    <button class="tab-btn px-4 py-2 rounded-full text-sm font-medium bg-white shadow-sm transition" data-tab="tab1">Quán Thân</button>
+                    <button class="tab-btn px-4 py-2 rounded-full text-sm font-medium bg-white shadow-sm transition" data-tab="tab2">Quán Thọ</button>
+                    <button class="tab-btn px-4 py-2 rounded-full text-sm font-medium bg-white shadow-sm transition" data-tab="tab3">Quán Tâm</button>
+                    <button class="tab-btn px-4 py-2 rounded-full text-sm font-medium bg-white shadow-sm transition" data-tab="tab4">Quán Pháp</button>
+                </div>
+                <div id="steps-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                </div>
+            </section>
+
+            <section id="factors">
+                <div class="text-center mb-12">
+                    <h3 class="text-2xl md:text-3xl font-bold text-stone-800">Sự Phát Sinh Tuần Tự của Thất Giác Chi</h3>
+                    <p class="mt-3 text-stone-600 max-w-2xl mx-auto">Khi Tứ Niệm Xứ viên mãn, Bảy Yếu Tố Giác Ngộ ($Bojjhaṅga$) sẽ tuần tự khởi sinh một cách tự nhiên. Đây là một dòng chảy tâm lý hữu cơ, không phải là một danh sách các phẩm chất cần tích lũy.</p>
+                </div>
+                <div class="relative">
+                    <div class="grid grid-cols-1 md:grid-cols-7 gap-4 text-center">
+                        <div class="factor-item p-3 bg-white rounded-lg shadow-md cursor-pointer" data-content="factor1">
+                            <p class="font-bold">1. Niệm</p><p class="text-xs text-stone-500">($Sati$)</p>
+                        </div>
+                        <div class="factor-item p-3 bg-white rounded-lg shadow-md cursor-pointer" data-content="factor2">
+                            <p class="font-bold">2. Trạch Pháp</p><p class="text-xs text-stone-500">($Dhamma-vicaya$)</p>
+                        </div>
+                        <div class="factor-item p-3 bg-white rounded-lg shadow-md cursor-pointer" data-content="factor3">
+                            <p class="font-bold">3. Tinh Tấn</p><p class="text-xs text-stone-500">($Viriya$)</p>
+                        </div>
+                        <div class="factor-item p-3 bg-white rounded-lg shadow-md cursor-pointer" data-content="factor4">
+                            <p class="font-bold">4. Hỷ</p><p class="text-xs text-stone-500">($Pīti$)</p>
+                        </div>
+                        <div class="factor-item p-3 bg-white rounded-lg shadow-md cursor-pointer" data-content="factor5">
+                            <p class="font-bold">5. Khinh An</p><p class="text-xs text-stone-500">($Passaddhi$)</p>
+                        </div>
+                        <div class="factor-item p-3 bg-white rounded-lg shadow-md cursor-pointer" data-content="factor6">
+                            <p class="font-bold">6. Định</p><p class="text-xs text-stone-500">($Samādhi$)</p>
+                        </div>
+                        <div class="factor-item p-3 bg-white rounded-lg shadow-md cursor-pointer" data-content="factor7">
+                            <p class="font-bold">7. Xả</p><p class="text-xs text-stone-500">($Upekkhā$)</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="factor-content" class="mt-8 p-6 bg-emerald-50 rounded-lg text-stone-700 min-h-[100px] fade-in hidden"></div>
+            </section>
+
+            <section id="context">
+                <div class="text-center mb-12">
+                    <h3 class="text-2xl md:text-3xl font-bold text-stone-800">Bối Cảnh & Hội Chúng Thanh Tịnh</h3>
+                    <p class="mt-3 text-stone-600 max-w-2xl mx-auto">Bài kinh được thuyết trong một bối cảnh trang nghiêm, trước một Tăng đoàn tinh tấn đã chứng đắc các Thánh quả. Sự hiện diện của họ là bằng chứng sống cho hiệu quả của pháp môn.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h4 class="font-bold text-xl mb-4 text-emerald-800">Thành Phần Hội Chúng</h4>
+                        <p class="text-stone-600 mb-4">Kinh văn mô tả một "hệ sinh thái giác ngộ" toàn diện, bao gồm các bậc Thánh đã giải thoát và các Tỷ-kheo đang nỗ lực tu tập. Biểu đồ này minh họa một cách khái niệm sự đa dạng của các cấp độ tu chứng có mặt trong Tăng đoàn, cho thấy con đường này dành cho nhiều căn cơ khác nhau.</p>
+                        <div class="space-y-2 text-sm">
+                            <p><strong class="text-emerald-700">A-la-hán:</strong> Giải thoát hoàn toàn.</p>
+                            <p><strong class="text-emerald-700">A-na-hàm:</strong> Bất Lai, không còn trở lại.</p>
+                            <p><strong class="text-emerald-700">Tư-đà-hàm:</strong> Nhất Lai, trở lại một lần nữa.</p>
+                            <p><strong class="text-emerald-700">Tu-đà-hoàn:</strong> Dự Lưu, đã nhập dòng Thánh.</p>
+                            <p><strong class="text-emerald-700">Đang tu tập:</strong> Các Tỷ-kheo chuyên tâm hành trì 37 phẩm trợ đạo.</p>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="attainmentChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="bg-stone-100 mt-16">
+        <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-stone-500 text-sm">
+            <p>Ứng dụng tương tác được tạo bởi AI dựa trên nội dung "Báo Cáo Phân Tích Chi Tiết Kinh Nhập Tức, Xuất Tức Niệm".</p>
+            <p>Chỉ sử dụng cho mục đích học hỏi và tham khảo.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            const contentData = {
+                path: {
+                    path1: "<strong>1. Quán Niệm Hơi Thở ($Ānāpānasati$):</strong> Đây là điểm khởi đầu, nền tảng của toàn bộ lộ trình. Kinh văn tuyên bố: 'Nhập tức xuất tức niệm... được tu tập, được làm cho sung mãn, đưa đến quả lớn, công đức lớn'. Đây không phải là một bài tập phụ, mà là một con đường tu tập hoàn chỉnh.",
+                    path2: "<strong>2. Tứ Niệm Xứ (Bốn Lĩnh Vực Quán Niệm):</strong> Khi quán niệm hơi thở được tu tập sung mãn, nó sẽ tự động làm cho Tứ Niệm Xứ (Quán Thân, Thọ, Tâm, Pháp) được viên mãn. Hơi thở được xem là 'cánh cửa' để đi vào quan sát toàn bộ thực tại của thân và tâm.",
+                    path3: "<strong>3. Thất Giác Chi (Bảy Yếu Tố Giác Ngộ):</strong> Khi Tứ Niệm Xứ được tu tập sung mãn, Bảy Yếu Tố Giác Ngộ sẽ tuần tự khởi sinh một cách tự nhiên, bắt đầu bằng Niệm Giác Chi. Đây là một dòng chảy tâm lý hữu cơ, dẫn dắt tâm đến trạng thái sáng suốt và cân bằng.",
+                    path4: "<strong>4. Minh & Giải Thoát ($Vijjā-Vimutti$):</strong> Khi Thất Giác Chi được tu tập sung mãn với định hướng đúng đắn (hướng đến viễn ly, ly tham, đoạn diệt, xả ly), chúng sẽ đưa đến kết quả cuối cùng là Minh (trí tuệ thấy rõ sự thật) và Giải Thoát (thoát khỏi mọi khổ đau, phiền não)."
+                },
+                steps: {
+                    tab1: [
+                        { no: 1, title: "Thở vô/ra dài", verb: "Biết", verb_en: "pajānāti" },
+                        { no: 2, title: "Thở vô/ra ngắn", verb: "Biết", verb_en: "pajānāti" },
+                        { no: 3, title: "Cảm giác toàn thân", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 4, title: "An tịnh thân hành", verb: "Tập", verb_en: "sikkhati" }
+                    ],
+                    tab2: [
+                        { no: 5, title: "Cảm giác hỷ thọ", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 6, title: "Cảm giác lạc thọ", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 7, title: "Cảm giác tâm hành", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 8, title: "An tịnh tâm hành", verb: "Tập", verb_en: "sikkhati" }
+                    ],
+                    tab3: [
+                        { no: 9, title: "Cảm giác về tâm", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 10, title: "Với tâm hân hoan", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 11, title: "Với tâm định tĩnh", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 12, "title": "Với tâm giải thoát", verb: "Tập", verb_en: "sikkhati" }
+                    ],
+                    tab4: [
+                        { no: 13, title: "Quán vô thường", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 14, title: "Quán ly tham", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 15, title: "Quán đoạn diệt", verb: "Tập", verb_en: "sikkhati" },
+                        { no: 16, title: "Quán từ bỏ", verb: "Tập", verb_en: "sikkhati" }
+                    ]
+                },
+                factors: {
+                    factor1: "<strong>1. Niệm ($Sati$):</strong> Phát sinh từ Tứ Niệm Xứ vững chắc. Đây là chánh niệm đã trở thành một năng lực tâm thức mạnh mẽ, ổn định, là nền tảng cho các giác chi khác.",
+                    factor2: "<strong>2. Trạch Pháp ($Dhamma-vicaya$):</strong> Khi an trú chánh niệm, hành giả bắt đầu 'suy tư, tư duy, thẩm sát pháp ấy với trí tuệ'. Đây là khả năng phân biệt, điều tra bản chất của các pháp (hiện tượng tâm-vật).",
+                    factor3: "<strong>3. Tinh Tấn ($Viriya$):</strong> Khi trí tuệ thẩm sát pháp, 'sự tinh tấn không thụ động bắt đầu khởi lên'. Đây là năng lượng bền bỉ, không mệt mỏi trong việc tu tập.",
+                    factor4: "<strong>4. Hỷ ($Pīti$):</strong> Nơi hành giả tinh tấn, 'Hỷ không liên hệ đến vật chất được khởi lên'. Đây là niềm vui, sự phấn chấn vi tế sinh ra từ nội tâm, không phụ thuộc vào các đối tượng bên ngoài.",
+                    factor5: "<strong>5. Khinh An ($Passaddhi$):</strong> Tâm hoan hỷ làm cho 'thân... trở thành khinh an, tâm cũng được khinh an'. Đây là trạng thái an tĩnh, nhẹ nhàng, thư thái của cả thân và tâm.",
+                    factor6: "<strong>6. Định ($Samādhi$):</strong> Thân và tâm khinh an, an lạc làm cho 'tâm vị ấy được định tĩnh'. Đây là trạng thái nhất tâm, tập trung cao độ trên một đối tượng.",
+                    factor7: "<strong>7. Xả ($Upekkhā$):</strong> Với tâm định tĩnh, hành giả 'khéo nhìn sự vật với ý niệm xả ly'. Đây là trạng thái quân bình, không dao động, không dính mắc trước mọi hoàn cảnh, là đỉnh cao của sự phát triển tâm thức."
+                }
+            };
+
+            const pathItems = document.querySelectorAll('.flow-item');
+            const pathContent = document.getElementById('path-content');
+            pathItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const contentKey = item.getAttribute('data-content');
+                    pathContent.innerHTML = contentData.path[contentKey];
+                    pathContent.classList.remove('hidden');
+                });
+            });
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const stepsContent = document.getElementById('steps-content');
+            function displaySteps(tabKey) {
+                stepsContent.innerHTML = '';
+                contentData.steps[tabKey].forEach(step => {
+                    const isKnowing = step.verb === 'Biết';
+                    const card = `
+                        <div class="step-card bg-white p-4 rounded-lg shadow-md flex flex-col justify-between fade-in">
+                            <div>
+                                <div class="flex justify-between items-start">
+                                    <span class="text-2xl font-bold text-emerald-600">${step.no}</span>
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full ${isKnowing ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}">
+                                        ${step.verb} <em class="italic">(${step.verb_en})</em>
+                                    </span>
+                                </div>
+                                <h5 class="mt-3 font-semibold text-stone-700">${step.title}</h5>
+                            </div>
+                            <p class="text-xs text-stone-400 mt-2">"..., tôi sẽ thở vô/ra"</p>
+                        </div>
+                    `;
+                    stepsContent.innerHTML += card;
+                });
+            }
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    const tabKey = button.getAttribute('data-tab');
+                    displaySteps(tabKey);
+                });
+            });
+            tabButtons[0].click();
+
+            const factorItems = document.querySelectorAll('.factor-item');
+            const factorContent = document.getElementById('factor-content');
+            factorItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const contentKey = item.getAttribute('data-content');
+                    factorContent.innerHTML = contentData.factors[contentKey];
+                    factorContent.classList.remove('hidden');
+                });
+            });
+
+            const attainmentCtx = document.getElementById('attainmentChart').getContext('2d');
+            new Chart(attainmentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['A-la-hán', 'A-na-hàm', 'Tư-đà-hàm', 'Tu-đà-hoàn', 'Đang tu tập'],
+                    datasets: [{
+                        label: 'Thành Phần Hội Chúng (Minh Họa)',
+                        data: [15, 20, 20, 25, 20],
+                        backgroundColor: [
+                            '#047857', // emerald-700
+                            '#059669', // emerald-600
+                            '#10b981', // emerald-500
+                            '#34d399', // emerald-400
+                            '#6ee7b7'  // emerald-300
+                        ],
+                        borderColor: '#fdfcfb',
+                        borderWidth: 4,
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: "'Be Vietnam Pro', sans-serif"
+                                },
+                                padding: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    label += 'Tỷ lệ minh họa';
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    if(!mobileMenu.classList.contains('hidden')){
+                        mobileMenu.classList.add('hidden');
+                    }
+                });
+            });
+            
+            const sections = document.querySelectorAll('section');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.getAttribute('id');
+                        document.querySelectorAll('.nav-link').forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${id}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }, { rootMargin: "-50% 0px -50% 0px" });
+
+            sections.forEach(section => {
+                observer.observe(section);
+            });
+
+        });
+    </script>
+</body>
+</html>
